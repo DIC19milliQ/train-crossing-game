@@ -18,8 +18,6 @@ const hazardElement = document.getElementById("hazard");
 const roamHazardElement = document.getElementById("roamHazard");
 const statusBadge = document.getElementById("statusBadge");
 const progressBadge = document.getElementById("progressBadge");
-const stageBadge = document.getElementById("stageBadge");
-const trainNameLabel = document.getElementById("trainNameLabel");
 const routeSign = document.getElementById("routeSign");
 const goalFlag = document.getElementById("goalFlag");
 const resultScreen = document.getElementById("resultScreen");
@@ -27,7 +25,6 @@ const resultHeading = document.getElementById("resultHeading");
 const resultText = document.getElementById("resultText");
 const confetti = document.getElementById("confetti");
 const soundButton = document.getElementById("soundButton");
-const brakeButton = document.getElementById("brakeButton");
 const speedButton = document.getElementById("speedButton");
 const speedMeter = document.getElementById("speedMeter");
 const speedLabel = document.getElementById("speedLabel");
@@ -49,7 +46,9 @@ const speedSteps = [
 ];
 
 const crossingHazards = ["person", "car"];
-const obstacleHazards = ["ball", "cat", "dog"];
+const obstacleHazards = ["cat", "dog"];
+
+const holdToBrakeDelay = 220;
 
 const stagePlan = [
   { sign: "つぎのまちへ" },
@@ -63,7 +62,7 @@ const backgroundThemes = [
   {
     label: "まち",
     className: "stage-town",
-    hazards: ["ball", "cat"],
+    hazards: ["cat"],
     decor: [
       ["building", "left:8%;"],
       ["building", "left:17%; height:64px;"],
@@ -73,7 +72,7 @@ const backgroundThemes = [
   {
     label: "こうえん",
     className: "stage-park",
-    hazards: ["dog", "ball", "cat"],
+    hazards: ["dog", "cat"],
     decor: [
       ["park-tree", "left:10%;"],
       ["park-tree", "right:22%;"],
@@ -83,7 +82,7 @@ const backgroundThemes = [
   {
     label: "かわとはし",
     className: "stage-river",
-    hazards: ["bird", "ball"],
+    hazards: ["cat", "dog"],
     decor: [
       ["river", ""],
       ["bridge", ""],
@@ -93,7 +92,7 @@ const backgroundThemes = [
   {
     label: "たんぼ",
     className: "stage-rice",
-    hazards: ["cat", "dog", "ball", "windbox"],
+    hazards: ["cat", "dog", "windbox"],
     decor: [
       ["field-row", "left:8%;"],
       ["field-row", "right:16%; transform:scale(.88);"],
@@ -103,7 +102,7 @@ const backgroundThemes = [
   {
     label: "えきのちかく",
     className: "stage-station",
-    hazards: ["bird", "cat", "ball"],
+    hazards: ["cat", "dog"],
     decor: [
       ["station", "left:9%;"],
       ["platform", "left:7%;"],
@@ -113,7 +112,7 @@ const backgroundThemes = [
   {
     label: "やま",
     className: "stage-mountain",
-    hazards: ["dog", "ball", "cat"],
+    hazards: ["dog", "cat"],
     decor: [
       ["rice-tree", "left:12%; transform:scale(.9);"],
       ["field-row", "right:18%;"],
@@ -123,7 +122,7 @@ const backgroundThemes = [
   {
     label: "うみのちかく",
     className: "stage-seaside",
-    hazards: ["bird", "ball", "windbox"],
+    hazards: ["cat", "dog", "windbox"],
     decor: [
       ["sea", ""],
       ["big-bridge", "right:8%; left:auto; transform:scale(.78);"],
@@ -133,7 +132,7 @@ const backgroundThemes = [
   {
     label: "ビルのまち",
     className: "stage-city",
-    hazards: ["cat", "dog", "ball"],
+    hazards: ["cat", "dog"],
     decor: [
       ["building", "left:7%; height:95px;"],
       ["building", "left:16%; height:72px;"],
@@ -143,7 +142,7 @@ const backgroundThemes = [
   {
     label: "ゆうえんち",
     className: "stage-amusement",
-    hazards: ["dog", "ball", "cat"],
+    hazards: ["dog", "cat"],
     decor: [
       ["wheel-bg", "left:10%;"],
       ["building", "right:20%; height:58px;"],
@@ -153,7 +152,7 @@ const backgroundThemes = [
   {
     label: "ドームのまち",
     className: "stage-dome",
-    hazards: ["cat", "ball", "windbox"],
+    hazards: ["cat", "dog", "windbox"],
     decor: [
       ["dome", "left:9%;"],
       ["building", "right:18%; height:70px;"],
@@ -163,7 +162,7 @@ const backgroundThemes = [
   {
     label: "タワーのまち",
     className: "stage-tower",
-    hazards: ["bird", "cat", "ball"],
+    hazards: ["cat", "dog"],
     decor: [
       ["tower-red", "left:12%;"],
       ["building", "right:18%; height:70px;"],
@@ -173,7 +172,7 @@ const backgroundThemes = [
   {
     label: "みずうみ",
     className: "stage-lake",
-    hazards: ["bird", "cat", "windbox"],
+    hazards: ["cat", "dog", "windbox"],
     decor: [
       ["lake", ""],
       ["big-bridge", "left:30%; transform:scale(.72);"],
@@ -208,6 +207,12 @@ const game = {
   dangerClearAt: 0,
   lastTime: 0,
   animationId: 0
+};
+
+const input = {
+  spacePressed: false,
+  brakeTriggeredByHold: false,
+  holdTimer: 0
 };
 
 const audio = {
@@ -274,7 +279,6 @@ function selectTrain(trainId) {
 function applyTrainStyle() {
   trainElement.className = `train ${game.selectedTrain.className}`;
   trainElement.innerHTML = createTrainMarkup(game.selectedTrain, false);
-  trainNameLabel.textContent = game.selectedTrain.name;
 }
 
 function getStepSpeed(stepIndex = game.speedStepIndex) {
@@ -291,6 +295,7 @@ function setSpeedStep(stepIndex) {
 
 function resetGame() {
   cancelAnimationFrame(game.animationId);
+  clearSpaceHold();
   unlockAudio();
   stages = buildStageRoute();
   applyTrainStyle();
@@ -328,15 +333,21 @@ function randomDangerPoint() {
 
 function buildStageRoute() {
   const shuffledThemes = shuffle(backgroundThemes);
-  const guaranteedRoamStage = 2 + Math.floor(Math.random() * 3);
   return stagePlan.map((slot, index) => {
     const theme = shuffledThemes[index % shuffledThemes.length];
     const weather = weatherOptions[Math.floor(Math.random() * weatherOptions.length)];
-    const events = [{ kind: "crossing" }];
-    const canAddRoam = index >= 2;
-    if (canAddRoam && (index === guaranteedRoamStage || Math.random() < 0.28)) {
+    const crossingChance = index === 0 ? 1 : index === 1 ? 0.8 : 0.6;
+    const roamChance = index === 0 ? 0.1 : index === 1 ? 0.3 : 0.5;
+    const events = [];
+
+    if (Math.random() < crossingChance) {
+      events.push({ kind: "crossing" });
+    }
+
+    if (Math.random() < roamChance) {
       events.push({ kind: "roam" });
     }
+
     return {
       ...theme,
       events,
@@ -362,14 +373,15 @@ function currentEvent() {
 }
 
 function chooseHazard(kind) {
-  const hazards = kind === "crossing" ? crossingHazards : obstacleHazards;
+  const hazards = kind === "crossing"
+    ? crossingHazards
+    : currentStage().hazards?.filter((hazard) => obstacleHazards.includes(hazard)) || obstacleHazards;
   return hazards[Math.floor(Math.random() * hazards.length)];
 }
 
 function updateStageView() {
   const stageInfo = currentStage();
   stage.className = `stage ${stageInfo.className} ${stageInfo.weatherClass}`;
-  stageBadge.textContent = `${stageInfo.label}・${stageInfo.weatherLabel}`;
   progressBadge.textContent = `ステージ ${game.stageIndex + 1} / ${stages.length}`;
   routeSign.textContent = stageInfo.sign;
   routeSign.classList.toggle("is-hidden", game.stageIndex === stages.length - 1);
@@ -427,13 +439,11 @@ function getHazardMarkup(hazard) {
 }
 
 function updateControls() {
-  if (!brakeButton || !speedButton) {
+  if (!speedButton) {
     return;
   }
 
-  brakeButton.disabled = game.braking || game.currentSpeed <= 0.1;
-  brakeButton.textContent = game.braking ? "ブレーキ中" : "ブレーキ";
-  speedButton.textContent = `スピード ${speedSteps[game.speedStepIndex].label}`;
+  speedButton.textContent = "はやさきりかえ";
   updateSpeedMeter();
 }
 
@@ -464,7 +474,10 @@ function setDanger(danger) {
   signal.classList.toggle("safe", !isCrossingDanger);
 
   hazardElement.className = isCrossingDanger ? `hazard crossing-hazard ${danger.hazard}` : "hazard crossing-hazard hidden";
-  roamHazardElement.className = isRoamDanger ? `hazard roam-hazard is-moving ${danger.hazard}` : "hazard roam-hazard hidden";
+  const roamFacingClass = isRoamDanger && (danger.hazard === "cat" || danger.hazard === "dog") ? " facing-left" : "";
+  roamHazardElement.className = isRoamDanger
+    ? `hazard roam-hazard is-moving ${danger.hazard}${roamFacingClass}`
+    : "hazard roam-hazard hidden";
   hazardElement.innerHTML = isCrossingDanger ? getHazardMarkup(danger.hazard) : "";
   roamHazardElement.innerHTML = isRoamDanger ? getHazardMarkup(danger.hazard) : "";
   updateControls();
@@ -610,7 +623,7 @@ function updateGame(time) {
 /*
   Collision rule:
   - crossing: the train overlaps the road/track crossing while a person or car remains.
-  - roam: the train overlaps the later track crossing zone while a ball, cat, or dog remains.
+  - roam: the train overlaps the later track crossing zone while a cat or dog remains.
   The train uses a slightly inset front/back so the result matches what the player sees.
 */
 function trainInDangerZone(metrics) {
@@ -643,6 +656,26 @@ function completeStage(metrics) {
   game.animationId = requestAnimationFrame(updateGame);
 }
 
+function resumeTrainFromBrake() {
+  if (game.state !== "playing" && game.state !== "danger" && game.state !== "stopped") {
+    return;
+  }
+
+  if (game.danger) {
+    showScreen("danger");
+    setStatus("とまって！", "danger");
+  } else {
+    showScreen("playing");
+    setStatus(speedSteps[game.speedStepIndex].label, "safe");
+  }
+
+  game.targetSpeed = getStepSpeed(game.speedStepIndex);
+  game.braking = false;
+  game.running = true;
+  updateControls();
+  updateLoops();
+}
+
 function accelerateTrain() {
   unlockAudio();
 
@@ -654,14 +687,7 @@ function accelerateTrain() {
   }
 
   if (game.state === "playing" || game.state === "stopped" || game.state === "danger") {
-    if (!game.running && game.currentSpeed <= 0.8 && !game.danger) {
-      game.targetSpeed = getStepSpeed(game.speedStepIndex);
-      game.braking = false;
-      game.running = true;
-      updateSpeedMeter();
-    } else {
-      setSpeedStep((game.speedStepIndex + 1) % speedSteps.length);
-    }
+    setSpeedStep((game.speedStepIndex + 1) % speedSteps.length);
     showScreen(game.danger ? "danger" : "playing");
     setStatus(game.danger ? "とまって！" : speedSteps[game.speedStepIndex].label, game.danger ? "danger" : "safe");
     playToneSet("go");
@@ -688,6 +714,47 @@ function brakeTrain() {
   playToneSet("stop");
   updateControls();
   updateLoops();
+}
+
+function clearSpaceHold() {
+  if (input.holdTimer) {
+    window.clearTimeout(input.holdTimer);
+    input.holdTimer = 0;
+  }
+}
+
+function onSpacePress() {
+  if (input.spacePressed) {
+    return;
+  }
+
+  input.spacePressed = true;
+  input.brakeTriggeredByHold = false;
+  clearSpaceHold();
+  input.holdTimer = window.setTimeout(() => {
+    if (!input.spacePressed) {
+      return;
+    }
+    input.brakeTriggeredByHold = true;
+    brakeTrain();
+  }, holdToBrakeDelay);
+}
+
+function onSpaceRelease() {
+  if (!input.spacePressed) {
+    return;
+  }
+
+  clearSpaceHold();
+  input.spacePressed = false;
+
+  if (input.brakeTriggeredByHold) {
+    input.brakeTriggeredByHold = false;
+    resumeTrainFromBrake();
+    return;
+  }
+
+  accelerateTrain();
 }
 
 function confirmBeforeGame() {
@@ -723,7 +790,7 @@ function handleMenuKeys(event) {
   const code = event.code;
 
   if (game.state === "title") {
-    if (code === "Space" || code === "Enter") {
+    if (code === "Space") {
       event.preventDefault();
       unlockAudio();
       confirmBeforeGame();
@@ -743,7 +810,7 @@ function handleMenuKeys(event) {
       moveTrainSelection(-1);
       return true;
     }
-    if (code === "Space" || code === "Enter") {
+    if (code === "Space") {
       event.preventDefault();
       resetGame();
       return true;
@@ -757,7 +824,7 @@ function handleMenuKeys(event) {
   }
 
   if (game.state === "clear" || game.state === "gameover") {
-    if (code === "Space" || code === "Enter") {
+    if (code === "Space") {
       event.preventDefault();
       showScreen("title");
       playToneSet("select");
@@ -993,7 +1060,6 @@ document.getElementById("retryButton").addEventListener("click", () => {
   showScreen("title");
 });
 
-brakeButton.addEventListener("click", brakeTrain);
 speedButton.addEventListener("click", accelerateTrain);
 
 soundButton.addEventListener("click", () => {
@@ -1016,16 +1082,27 @@ document.addEventListener("keydown", (event) => {
 
   if (event.code === "Space") {
     event.preventDefault();
-    brakeTrain();
-  }
-
-  if (event.code === "Enter" || event.code === "ArrowRight") {
-    event.preventDefault();
-    accelerateTrain();
+    if (!event.repeat) {
+      onSpacePress();
+    }
   }
 });
 
+document.addEventListener("keyup", (event) => {
+  if (event.code !== "Space") {
+    return;
+  }
+
+  event.preventDefault();
+  onSpaceRelease();
+});
+
 window.addEventListener("resize", updateTrainPosition);
+window.addEventListener("blur", () => {
+  clearSpaceHold();
+  input.spacePressed = false;
+  input.brakeTriggeredByHold = false;
+});
 
 stages = buildStageRoute();
 buildTrainChoices();

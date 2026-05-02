@@ -27,30 +27,11 @@
     </section>
 
     <section id="gameScreen" class="screen screen-game" aria-labelledby="gameHeading">
+      <h2 id="gameHeading" class="sr-only">あんぜんかくにん</h2>
       <div class="top-bar">
-        <div>
-          <h2 id="gameHeading">あんぜんかくにん</h2>
-          <p id="trainNameLabel" class="train-name">はやぶさ風</p>
-        </div>
         <div class="hud">
-          <div id="stageBadge" class="stage-badge">まち</div>
           <div id="progressBadge" class="progress-badge">ステージ 1 / 5</div>
           <div id="statusBadge" class="status-badge">すすめるよ！</div>
-        </div>
-        <div id="speedMeter" class="speed-meter" aria-label="スピードメーター">
-          <div class="speed-meter-top">
-            <span>スピード</span>
-            <strong id="speedLabel">ゆっくり</strong>
-          </div>
-          <div class="speed-track">
-            <span class="speed-fill" id="speedFill"></span>
-          </div>
-          <div class="speed-lamps" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
         </div>
       </div>
 
@@ -93,11 +74,26 @@
         <div id="train" class="train train-hayabusa" aria-label="でんしゃ"></div>
       </div>
 
-      <div class="controls" aria-label="そうさ">
-        <button id="brakeButton" class="control-button stop" type="button">ブレーキ</button>
-        <button id="speedButton" class="control-button go" type="button">スピード</button>
+      <div class="bottom-panel">
+        <div id="speedMeter" class="speed-meter" aria-label="スピードメーター">
+          <div class="speed-meter-top">
+            <span>スピード</span>
+            <strong id="speedLabel">ゆっくり</strong>
+          </div>
+          <div class="speed-track">
+            <span class="speed-fill" id="speedFill"></span>
+          </div>
+          <div class="speed-lamps" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+        <div class="controls" aria-label="そうさ">
+          <button id="speedButton" class="control-button go" type="button">スピード</button>
+        </div>
       </div>
-      <p class="control-hint">スペース: ブレーキ / エンター: スピードきりかえ</p>
     </section>
 
     <section id="resultScreen" class="screen screen-result" aria-labelledby="resultHeading">
