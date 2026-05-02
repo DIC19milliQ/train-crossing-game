@@ -345,7 +345,7 @@ function buildStageRoute() {
     const roamChance = index === 0 ? 0.1 : index === 1 ? 0.3 : 0.5;
     const events = [];
 
-    if (Math.random() < crossingChance) {
+    if (index === 0 || Math.random() < crossingChance) {
       events.push({ kind: "crossing" });
     }
 
@@ -491,6 +491,7 @@ function setDanger(danger) {
   crossing.classList.toggle("is-danger", Boolean(isCrossingDanger));
   signal.classList.toggle("danger", Boolean(isCrossingDanger));
   signal.classList.toggle("safe", !isCrossingDanger);
+  crossing.toggleAttribute("data-danger-active", Boolean(isCrossingDanger));
 
   hazardElement.className = isCrossingDanger ? `hazard crossing-hazard ${danger.hazard}` : "hazard crossing-hazard hidden";
   roamHazardElement.className = isRoamDanger
@@ -498,6 +499,8 @@ function setDanger(danger) {
     : "hazard roam-hazard hidden";
   hazardElement.innerHTML = isCrossingDanger ? getHazardMarkup(danger.hazard) : "";
   roamHazardElement.innerHTML = isRoamDanger ? getHazardMarkup(danger.hazard) : "";
+  hazardElement.toggleAttribute("data-danger-active", Boolean(isCrossingDanger));
+  roamHazardElement.toggleAttribute("data-danger-active", Boolean(isRoamDanger));
   updateControls();
   updateLoops();
 }
@@ -512,7 +515,12 @@ function triggerDanger() {
   const clearDelay = kind === "crossing" ? 3000 + Math.random() * 1500 : 3800 + Math.random() * 1400;
 
   game.dangerClearAt = performance.now() + clearDelay;
-  setDanger({ kind, hazard });
+  setDanger({
+    kind,
+    hazard,
+    stageIndex: game.stageIndex,
+    eventIndex: game.eventIndex
+  });
   setStatus("とまって！", "danger");
   showScreen("danger");
 }
@@ -587,9 +595,10 @@ function getStoppingDistance() {
   return (game.currentSpeed * game.currentSpeed) / (2 * brake);
 }
 
-function getWarningDistance() {
-  const stepBonus = game.speedStepIndex * 10;
-  return 155 + getStoppingDistance() + stepBonus;
+function getWarningDistance(kind) {
+  const stepBonus = game.speedStepIndex * 22;
+  const baseDistance = kind === "crossing" ? 130 : 310;
+  return baseDistance + getStoppingDistance() + stepBonus;
 }
 
 function updateGame(time) {
@@ -611,8 +620,10 @@ function updateGame(time) {
 
   if (!game.danger && eventInfo) {
     const zone = getDangerZone(metrics, eventInfo.kind);
-    const warningStart = Math.max(game.nextDangerAt, zone.start - getWarningDistance());
-    if (game.trainX >= warningStart && game.trainX < zone.triggerLimit) {
+    const trainFront = game.trainX + trainElement.offsetWidth * 0.86;
+    const warningStart = Math.max(game.nextDangerAt, zone.start - getWarningDistance(eventInfo.kind));
+    const warningPosition = eventInfo.kind === "crossing" ? trainFront : game.trainX;
+    if (warningPosition >= warningStart && game.trainX < zone.triggerLimit) {
       triggerDanger();
     }
   }
@@ -625,7 +636,7 @@ function updateGame(time) {
     clearDanger();
   }
 
-  if (game.danger && trainInDangerZone(metrics)) {
+  if (isDangerCollisionArmed() && trainInDangerZone(metrics)) {
     endGame(false);
     return;
   }
@@ -645,10 +656,61 @@ function updateGame(time) {
   The train uses a slightly inset front/back so the result matches what the player sees.
 */
 function trainInDangerZone(metrics) {
+  if (!isDangerCollisionArmed()) {
+    return false;
+  }
+
   const trainFront = game.trainX + trainElement.offsetWidth * 0.86;
   const trainBack = game.trainX + trainElement.offsetWidth * 0.14;
   const zone = getDangerZone(metrics, game.danger.kind);
   return trainFront >= zone.start && trainBack <= zone.end;
+}
+
+function dangerMatchesCurrentEvent() {
+  const eventInfo = currentEvent();
+  return Boolean(
+    game.danger
+    && eventInfo
+    && game.danger.kind === eventInfo.kind
+    && game.danger.stageIndex === game.stageIndex
+    && game.danger.eventIndex === game.eventIndex
+  );
+}
+
+function isCrossingDangerVisible() {
+  return Boolean(
+    game.danger
+    && game.danger.kind === "crossing"
+    && crossing.hasAttribute("data-danger-active")
+    && hazardElement.hasAttribute("data-danger-active")
+    && crossing.classList.contains("is-danger")
+    && signal.classList.contains("danger")
+    && hazardElement.classList.contains("crossing-hazard")
+    && !hazardElement.classList.contains("hidden")
+    && crossingHazards.includes(game.danger.hazard)
+    && hazardElement.classList.contains(game.danger.hazard)
+  );
+}
+
+function isRoamDangerVisible() {
+  return Boolean(
+    game.danger
+    && game.danger.kind === "roam"
+    && roamHazardElement.hasAttribute("data-danger-active")
+    && roamHazardElement.classList.contains("roam-hazard")
+    && roamHazardElement.classList.contains("is-moving")
+    && !roamHazardElement.classList.contains("hidden")
+    && obstacleHazards.includes(game.danger.hazard)
+    && roamHazardElement.classList.contains(game.danger.hazard)
+  );
+}
+
+function isDangerCollisionArmed() {
+  if (!dangerMatchesCurrentEvent()) {
+    return false;
+  }
+
+  return game.danger.kind === "crossing" ? isCrossingDangerVisible() : isRoamDangerVisible();
 }
 
 function completeStage(metrics) {
@@ -664,9 +726,9 @@ function completeStage(metrics) {
   game.nextDangerAt = randomDangerPoint();
   game.dangerClearAt = 0;
   game.lastTime = 0;
+  setDanger(null);
   updateStageView();
   updateTrainPosition();
-  setDanger(null);
   setStatus("つぎのステージ", "safe");
   updateControls();
   playToneSet("next");
