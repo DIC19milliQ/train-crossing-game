@@ -23,6 +23,7 @@ const goalFlag = document.getElementById("goalFlag");
 const resultScreen = document.getElementById("resultScreen");
 const resultHeading = document.getElementById("resultHeading");
 const resultText = document.getElementById("resultText");
+const resultHint = document.getElementById("resultHint");
 const confetti = document.getElementById("confetti");
 const soundButton = document.getElementById("soundButton");
 const speedButton = document.getElementById("speedButton");
@@ -31,18 +32,18 @@ const speedLabel = document.getElementById("speedLabel");
 const speedFill = document.getElementById("speedFill");
 
 const trains = [
-  { id: "hayabusa", name: "はやぶさ風", className: "train-hayabusa bullet", baseSpeed: 46, accel: 24, brake: 36, speedLabel: "はやい" },
-  { id: "komachi", name: "こまち風", className: "train-komachi bullet", baseSpeed: 46, accel: 24, brake: 36, speedLabel: "はやい" },
-  { id: "yellow", name: "ドクターイエロー風", className: "train-yellow bullet", baseSpeed: 42, accel: 22, brake: 39, speedLabel: "はやめ" },
-  { id: "local", name: "普通電車風", className: "train-local local", baseSpeed: 38, accel: 20, brake: 42, speedLabel: "ふつう" },
-  { id: "freight", name: "貨物列車風", className: "train-freight freight", baseSpeed: 34, accel: 15, brake: 34, speedLabel: "ゆっくり" }
+  { id: "hayabusa", name: "はやぶさ風", className: "train-hayabusa bullet", baseSpeed: 48, accel: 28, brake: 32, speedLabel: "はやい" },
+  { id: "komachi", name: "こまち風", className: "train-komachi bullet", baseSpeed: 48, accel: 28, brake: 32, speedLabel: "はやい" },
+  { id: "yellow", name: "ドクターイエロー風", className: "train-yellow bullet", baseSpeed: 44, accel: 25, brake: 34, speedLabel: "はやめ" },
+  { id: "local", name: "普通電車風", className: "train-local local", baseSpeed: 39, accel: 21, brake: 39, speedLabel: "ふつう" },
+  { id: "freight", name: "貨物列車風", className: "train-freight freight", baseSpeed: 34, accel: 17, brake: 44, speedLabel: "ゆっくり" }
 ];
 
 const speedSteps = [
-  { label: "ゆっくり", multiplier: 0.68 },
-  { label: "ふつう", multiplier: 0.9 },
-  { label: "はやい", multiplier: 1.08 },
-  { label: "さいこうそく", multiplier: 1.24 }
+  { label: "ゆっくり", multiplier: 0.42 },
+  { label: "ふつう", multiplier: 0.72 },
+  { label: "はやい", multiplier: 1.05 },
+  { label: "さいこうそく", multiplier: 1.62 }
 ];
 
 const crossingHazards = ["person", "car"];
@@ -212,7 +213,8 @@ const game = {
 const input = {
   spacePressed: false,
   brakeTriggeredByHold: false,
-  holdTimer: 0
+  holdTimer: 0,
+  spaceConfirmLocked: false
 };
 
 const audio = {
@@ -296,6 +298,8 @@ function setSpeedStep(stepIndex) {
 function resetGame() {
   cancelAnimationFrame(game.animationId);
   clearSpaceHold();
+  input.brakeTriggeredByHold = false;
+  input.spaceConfirmLocked = false;
   unlockAudio();
   stages = buildStageRoute();
   applyTrainStyle();
@@ -314,6 +318,7 @@ function resetGame() {
   updateStageView();
   updateTrainPosition();
   updateSpeedMeter();
+  updateResultHint();
   setDanger(null);
   setStatus("すすめるよ！", "safe");
   showScreen("playing");
@@ -409,33 +414,47 @@ function getHazardMarkup(hazard) {
       <span class="person-leg person-leg-right"></span>
     `,
     cat: `
-      <span class="animal-tail cat-tail"></span>
-      <span class="animal-body cat-body"></span>
-      <span class="animal-leg animal-leg-one"></span>
-      <span class="animal-leg animal-leg-two"></span>
-      <span class="animal-head cat-head"></span>
-      <span class="animal-ear cat-ear-left"></span>
-      <span class="animal-ear cat-ear-right"></span>
-      <span class="animal-eye animal-eye-one"></span>
-      <span class="animal-eye animal-eye-two"></span>
-      <span class="animal-nose cat-nose"></span>
-      <span class="cat-whiskers"></span>
+      <span class="animal-shell">
+        <span class="animal-tail cat-tail"></span>
+        <span class="animal-body cat-body"></span>
+        <span class="animal-leg animal-leg-one"></span>
+        <span class="animal-leg animal-leg-two"></span>
+        <span class="animal-head cat-head"></span>
+        <span class="animal-ear cat-ear-left"></span>
+        <span class="animal-ear cat-ear-right"></span>
+        <span class="animal-eye animal-eye-one"></span>
+        <span class="animal-eye animal-eye-two"></span>
+        <span class="animal-nose cat-nose"></span>
+        <span class="cat-whiskers"></span>
+      </span>
     `,
     dog: `
-      <span class="animal-tail dog-tail"></span>
-      <span class="animal-body dog-body"></span>
-      <span class="animal-leg animal-leg-one"></span>
-      <span class="animal-leg animal-leg-two"></span>
-      <span class="animal-head dog-head"></span>
-      <span class="dog-ear dog-ear-left"></span>
-      <span class="dog-ear dog-ear-right"></span>
-      <span class="animal-eye animal-eye-one"></span>
-      <span class="animal-eye animal-eye-two"></span>
-      <span class="animal-nose dog-nose"></span>
+      <span class="animal-shell">
+        <span class="animal-tail dog-tail"></span>
+        <span class="animal-body dog-body"></span>
+        <span class="animal-leg animal-leg-one"></span>
+        <span class="animal-leg animal-leg-two"></span>
+        <span class="animal-head dog-head"></span>
+        <span class="dog-ear dog-ear-left"></span>
+        <span class="dog-ear dog-ear-right"></span>
+        <span class="animal-eye animal-eye-one"></span>
+        <span class="animal-eye animal-eye-two"></span>
+        <span class="animal-nose dog-nose"></span>
+      </span>
     `
   };
 
   return templates[hazard] || "";
+}
+
+function updateResultHint() {
+  if (!resultHint) {
+    return;
+  }
+
+  resultHint.textContent = input.spaceConfirmLocked
+    ? "スペースキーをはなしてから、もういちど押してね"
+    : "スペースキーでもどる";
 }
 
 function updateControls() {
@@ -474,9 +493,8 @@ function setDanger(danger) {
   signal.classList.toggle("safe", !isCrossingDanger);
 
   hazardElement.className = isCrossingDanger ? `hazard crossing-hazard ${danger.hazard}` : "hazard crossing-hazard hidden";
-  const roamFacingClass = isRoamDanger && (danger.hazard === "cat" || danger.hazard === "dog") ? " facing-left" : "";
   roamHazardElement.className = isRoamDanger
-    ? `hazard roam-hazard is-moving ${danger.hazard}${roamFacingClass}`
+    ? `hazard roam-hazard is-moving ${danger.hazard}`
     : "hazard roam-hazard hidden";
   hazardElement.innerHTML = isCrossingDanger ? getHazardMarkup(danger.hazard) : "";
   roamHazardElement.innerHTML = isRoamDanger ? getHazardMarkup(danger.hazard) : "";
@@ -570,8 +588,8 @@ function getStoppingDistance() {
 }
 
 function getWarningDistance() {
-  const stepBonus = game.speedStepIndex * 22;
-  return 310 + getStoppingDistance() + stepBonus;
+  const stepBonus = game.speedStepIndex * 10;
+  return 155 + getStoppingDistance() + stepBonus;
 }
 
 function updateGame(time) {
@@ -741,12 +759,19 @@ function onSpacePress() {
 }
 
 function onSpaceRelease() {
-  if (!input.spacePressed) {
+  const wasPressed = input.spacePressed;
+  if (!wasPressed && !input.spaceConfirmLocked) {
     return;
   }
 
   clearSpaceHold();
   input.spacePressed = false;
+  input.spaceConfirmLocked = false;
+  updateResultHint();
+
+  if (!wasPressed) {
+    return;
+  }
 
   if (input.brakeTriggeredByHold) {
     input.brakeTriggeredByHold = false;
@@ -792,6 +817,9 @@ function handleMenuKeys(event) {
   if (game.state === "title") {
     if (code === "Space") {
       event.preventDefault();
+      if (event.repeat) {
+        return true;
+      }
       unlockAudio();
       confirmBeforeGame();
       return true;
@@ -812,6 +840,9 @@ function handleMenuKeys(event) {
     }
     if (code === "Space") {
       event.preventDefault();
+      if (event.repeat) {
+        return true;
+      }
       resetGame();
       return true;
     }
@@ -826,6 +857,10 @@ function handleMenuKeys(event) {
   if (game.state === "clear" || game.state === "gameover") {
     if (code === "Space") {
       event.preventDefault();
+      if (input.spaceConfirmLocked || event.repeat) {
+        updateResultHint();
+        return true;
+      }
       showScreen("title");
       playToneSet("select");
       return true;
@@ -838,16 +873,20 @@ function handleMenuKeys(event) {
 
 function endGame(clear) {
   cancelAnimationFrame(game.animationId);
+  clearSpaceHold();
   game.running = false;
   const lastDanger = game.danger;
   setDanger(null);
   stopRunLoop();
   stopCrossingLoop();
+  input.spaceConfirmLocked = input.spacePressed;
+  input.brakeTriggeredByHold = false;
   resultScreen.classList.toggle("gameover", !clear);
 
   if (clear) {
     resultHeading.textContent = "クリア！";
     resultText.textContent = "ぜんぶ あんぜんに とおれたね";
+    updateResultHint();
     makeConfetti();
     playToneSet("clear");
     showScreen("clear");
@@ -859,6 +898,7 @@ function endGame(clear) {
     ? "どうぶつやものがいたら とまろうね"
     : "ふみきりでは あんぜんかくにん";
   confetti.innerHTML = "";
+  updateResultHint();
   playToneSet("gameover");
   showScreen("gameover");
 }
@@ -1056,6 +1096,8 @@ document.getElementById("startButton").addEventListener("click", resetGame);
 
 document.getElementById("retryButton").addEventListener("click", () => {
   unlockAudio();
+  input.spaceConfirmLocked = false;
+  updateResultHint();
   playToneSet("select");
   showScreen("title");
 });
@@ -1102,6 +1144,8 @@ window.addEventListener("blur", () => {
   clearSpaceHold();
   input.spacePressed = false;
   input.brakeTriggeredByHold = false;
+  input.spaceConfirmLocked = false;
+  updateResultHint();
 });
 
 stages = buildStageRoute();
@@ -1110,4 +1154,5 @@ applyTrainStyle();
 updateStageView();
 updateSoundButton();
 updateControls();
+updateResultHint();
 showScreen("title");

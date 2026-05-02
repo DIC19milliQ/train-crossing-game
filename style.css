@@ -94,6 +94,14 @@ button {
   font-weight: 900;
 }
 
+.screen-result .result-hint {
+  max-width: min(680px, 92vw);
+  color: #30506e;
+  font-size: clamp(16px, 2.7vw, 24px);
+  font-weight: 800;
+  line-height: 1.5;
+}
+
 .sound-button {
   position: fixed;
   top: 14px;
@@ -1025,8 +1033,16 @@ button {
   animation: roamCross 3.8s ease-in-out infinite alternate;
 }
 
-.roam-hazard.facing-left {
-  transform: translateX(-50%) scaleX(-1);
+.animal-shell {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.hazard.cat .animal-shell,
+.hazard.dog .animal-shell {
+  transform: scaleX(-1);
+  transform-origin: center;
 }
 
 .hazard.person .person-head,
