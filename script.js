@@ -52,11 +52,11 @@ const crossingHazards = ["person", "car"];
 const obstacleHazards = ["ball", "cat", "dog"];
 
 const stagePlan = [
-  { eventType: "crossing", sign: "つぎのまちへ" },
-  { eventType: "crossing", sign: "つぎのふみきりへ" },
-  { eventType: "crossing", sign: "つぎのはしへ" },
-  { eventType: "roam", sign: "つぎのえきへ" },
-  { eventType: "mixed", sign: "ゴール" }
+  { sign: "つぎのまちへ" },
+  { sign: "つぎのふみきりへ" },
+  { sign: "つぎのはしへ" },
+  { sign: "つぎのえきへ" },
+  { sign: "ゴール" }
 ];
 
 const backgroundThemes = [
@@ -203,7 +203,7 @@ const game = {
   running: true,
   stageIndex: 0,
   danger: null,
-  eventDone: false,
+  eventIndex: 0,
   nextDangerAt: 70,
   dangerClearAt: 0,
   lastTime: 0,
@@ -302,7 +302,7 @@ function resetGame() {
   game.running = true;
   game.stageIndex = 0;
   game.danger = null;
-  game.eventDone = false;
+  game.eventIndex = 0;
   game.nextDangerAt = randomDangerPoint();
   game.dangerClearAt = 0;
   game.lastTime = 0;
@@ -328,12 +328,18 @@ function randomDangerPoint() {
 
 function buildStageRoute() {
   const shuffledThemes = shuffle(backgroundThemes);
+  const guaranteedRoamStage = 2 + Math.floor(Math.random() * 3);
   return stagePlan.map((slot, index) => {
     const theme = shuffledThemes[index % shuffledThemes.length];
     const weather = weatherOptions[Math.floor(Math.random() * weatherOptions.length)];
+    const events = [{ kind: "crossing" }];
+    const canAddRoam = index >= 2;
+    if (canAddRoam && (index === guaranteedRoamStage || Math.random() < 0.28)) {
+      events.push({ kind: "roam" });
+    }
     return {
       ...theme,
-      eventType: slot.eventType,
+      events,
       sign: index === stagePlan.length - 1 ? "ゴール" : slot.sign,
       weatherLabel: weather.label,
       weatherClass: weather.className
@@ -350,11 +356,9 @@ function shuffle(items) {
   return result;
 }
 
-function chooseEvent(stageInfo) {
-  if (stageInfo.eventType === "mixed") {
-    return Math.random() < 0.55 ? "roam" : "crossing";
-  }
-  return stageInfo.eventType;
+function currentEvent() {
+  const stageInfo = currentStage();
+  return stageInfo.events[game.eventIndex] || null;
 }
 
 function chooseHazard(kind) {
@@ -468,8 +472,11 @@ function setDanger(danger) {
 }
 
 function triggerDanger() {
-  const stageInfo = currentStage();
-  const kind = chooseEvent(stageInfo);
+  const eventInfo = currentEvent();
+  if (!eventInfo) {
+    return;
+  }
+  const kind = eventInfo.kind;
   const hazard = chooseHazard(kind);
   const clearDelay = kind === "crossing" ? 3000 + Math.random() * 1500 : 3800 + Math.random() * 1400;
 
@@ -480,9 +487,11 @@ function triggerDanger() {
 }
 
 function clearDanger() {
+  const finishedKind = game.danger ? game.danger.kind : "";
   setDanger(null);
-  game.eventDone = true;
-  setStatus("すすめるよ！", game.running ? "safe" : "wait");
+  game.eventIndex += 1;
+  game.nextDangerAt = game.trainX + (finishedKind === "crossing" ? 70 : 40);
+  setStatus(currentEvent() ? "つぎも あんぜんかくにん" : "すすめるよ！", game.running ? "safe" : "wait");
   showScreen(game.running ? "playing" : "stopped");
   playToneSet("safe");
 }
@@ -499,8 +508,24 @@ function getStageMetrics() {
     finishX: stageWidth - trainWidth - 28,
     crossingStart: stageWidth * 0.63 - trainWidth * 0.2,
     crossingEnd: stageWidth * 0.63 + 96,
-    roamStart: stageWidth * 0.5 - trainWidth * 0.1,
-    roamEnd: stageWidth * 0.64
+    roamStart: stageWidth * 0.7 - trainWidth * 0.12,
+    roamEnd: stageWidth * 0.82
+  };
+}
+
+function getDangerZone(metrics, kind) {
+  if (kind === "crossing") {
+    return {
+      start: metrics.crossingStart,
+      end: metrics.crossingEnd,
+      triggerLimit: metrics.crossingStart - 128
+    };
+  }
+
+  return {
+    start: metrics.roamStart,
+    end: metrics.roamEnd,
+    triggerLimit: metrics.roamStart - 96
   };
 }
 
@@ -551,10 +576,18 @@ function updateGame(time) {
   }
 
   const metrics = getStageMetrics();
+  const eventInfo = currentEvent();
 
-  const warningStart = Math.max(game.nextDangerAt, metrics.crossingStart - getWarningDistance());
-  if (!game.danger && !game.eventDone && game.trainX >= warningStart && game.trainX < metrics.crossingStart - 128) {
-    triggerDanger();
+  if (!game.danger && eventInfo) {
+    const zone = getDangerZone(metrics, eventInfo.kind);
+    const warningStart = Math.max(game.nextDangerAt, zone.start - getWarningDistance());
+    if (game.trainX >= warningStart && game.trainX < zone.triggerLimit) {
+      triggerDanger();
+    }
+  }
+
+  if (!game.danger && !eventInfo && game.trainX < metrics.finishX) {
+    setStatus("すすめるよ！", "safe");
   }
 
   if (game.danger && !game.running && time >= game.dangerClearAt) {
@@ -574,13 +607,17 @@ function updateGame(time) {
   game.animationId = requestAnimationFrame(updateGame);
 }
 
+/*
+  Collision rule:
+  - crossing: the train overlaps the road/track crossing while a person or car remains.
+  - roam: the train overlaps the later track crossing zone while a ball, cat, or dog remains.
+  The train uses a slightly inset front/back so the result matches what the player sees.
+*/
 function trainInDangerZone(metrics) {
   const trainFront = game.trainX + trainElement.offsetWidth * 0.86;
   const trainBack = game.trainX + trainElement.offsetWidth * 0.14;
-  if (game.danger.kind === "crossing") {
-    return trainFront >= metrics.crossingStart && trainBack <= metrics.crossingEnd;
-  }
-  return trainFront >= metrics.roamStart && trainBack <= metrics.roamEnd;
+  const zone = getDangerZone(metrics, game.danger.kind);
+  return trainFront >= zone.start && trainBack <= zone.end;
 }
 
 function completeStage(metrics) {
@@ -592,7 +629,7 @@ function completeStage(metrics) {
   game.stageIndex += 1;
   game.trainX = metrics.resetX;
   game.running = true;
-  game.eventDone = false;
+  game.eventIndex = 0;
   game.nextDangerAt = randomDangerPoint();
   game.dangerClearAt = 0;
   game.lastTime = 0;

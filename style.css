@@ -994,7 +994,7 @@ button {
 
 .roam-hazard {
   left: 72%;
-  bottom: 156px;
+  bottom: 104px;
   transform: translateX(-50%);
 }
 
@@ -1019,42 +1019,199 @@ button {
   animation: roamCross 3.8s ease-in-out infinite alternate;
 }
 
-.hazard.person::before {
+.hazard.ball::before {
   content: "";
   position: absolute;
-  left: 27px;
-  top: 3px;
+  left: 14px;
+  bottom: 20px;
+  width: 58px;
+  height: 58px;
+  border: 4px solid #315f93;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255,255,255,0.85) 0 11px, transparent 12px),
+    linear-gradient(135deg, transparent 0 42%, rgba(255,255,255,0.72) 43% 50%, transparent 51%),
+    linear-gradient(45deg, transparent 0 42%, rgba(255,255,255,0.72) 43% 50%, transparent 51%),
+    #e85c4a;
+  box-shadow: 0 5px 0 rgba(37,48,68,0.18);
+}
+
+.hazard.person .person-head,
+.hazard.person .person-body,
+.hazard.person .person-arm,
+.hazard.person .person-leg,
+.hazard.cat span,
+.hazard.dog span {
+  position: absolute;
+  display: block;
+}
+
+.hazard.person::before,
+.hazard.person::after,
+.hazard.cat::before,
+.hazard.cat::after,
+.hazard.dog::before,
+.hazard.dog::after {
+  content: none;
+}
+
+.person-head {
+  left: 28px;
+  top: 5px;
   width: 30px;
   height: 30px;
+  border: 3px solid rgba(83, 67, 54, 0.18);
   border-radius: 50%;
   background: #e8bd86;
-  box-shadow: inset -4px -4px 0 rgba(130, 72, 40, 0.14);
+  box-shadow: inset -4px -4px 0 rgba(120, 70, 42, 0.16), 0 -5px 0 -2px #4f3b2d;
 }
 
-.hazard.person::after {
-  content: "";
-  position: absolute;
-  left: 20px;
-  top: 35px;
+.person-body {
+  left: 21px;
+  top: 37px;
   width: 44px;
-  height: 48px;
-  border-radius: 14px 14px 9px 9px;
+  height: 42px;
+  border-radius: 13px 13px 9px 9px;
   background: linear-gradient(#4f84d6, #315f9f);
-  box-shadow: -17px 14px 0 -9px #e8bd86, 17px 14px 0 -9px #e8bd86, -10px 39px 0 -8px #293955, 10px 39px 0 -8px #293955;
+  box-shadow: inset -5px -6px 0 rgba(0,0,0,0.12);
 }
 
-.hazard.box::before,
-.hazard.windbox::before {
-  content: "";
+.person-arm {
+  top: 45px;
+  width: 13px;
+  height: 31px;
+  border-radius: 999px;
+  background: #e8bd86;
+}
+
+.person-arm-left { left: 10px; transform: rotate(19deg); }
+.person-arm-right { right: 10px; transform: rotate(-19deg); }
+
+.person-leg {
+  top: 76px;
+  width: 14px;
+  height: 20px;
+  border-radius: 0 0 7px 7px;
+  background: #293955;
+}
+
+.person-leg-left { left: 25px; }
+.person-leg-right { right: 25px; }
+
+.animal-body {
+  left: 14px;
+  bottom: 22px;
+  width: 48px;
+  height: 31px;
+  border-radius: 22px 20px 14px 14px;
+  box-shadow: inset -5px -5px 0 rgba(0,0,0,0.12);
+}
+
+.animal-head {
+  right: 8px;
+  bottom: 39px;
+  width: 34px;
+  height: 32px;
+  border-radius: 45% 45% 42% 42%;
+  box-shadow: inset -4px -4px 0 rgba(0,0,0,0.12);
+}
+
+.cat-body,
+.cat-head,
+.cat-ear-left,
+.cat-ear-right,
+.cat-tail {
+  background: #747970;
+}
+
+.dog-body,
+.dog-head,
+.dog-tail {
+  background: #a97752;
+}
+
+.animal-leg {
+  bottom: 14px;
+  width: 10px;
+  height: 17px;
+  border-radius: 0 0 6px 6px;
+}
+
+.animal-leg-one { left: 25px; }
+.animal-leg-two { left: 48px; }
+.cat .animal-leg { background: #4e534c; }
+.dog .animal-leg { background: #5e412e; }
+
+.animal-tail {
+  left: 4px;
+  bottom: 42px;
+  width: 25px;
+  height: 9px;
+  border-radius: 999px;
+  transform-origin: right center;
+}
+
+.cat-tail {
+  transform: rotate(-48deg);
+  box-shadow: -6px -4px 0 -2px #747970;
+}
+
+.dog-tail {
+  transform: rotate(-24deg);
+}
+
+.animal-ear {
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 18px solid #747970;
+}
+
+.cat-ear-left { right: 33px; bottom: 63px; transform: rotate(-16deg); }
+.cat-ear-right { right: 11px; bottom: 63px; transform: rotate(16deg); }
+
+.dog-ear {
   position: absolute;
-  left: 7px;
-  bottom: 0;
-  width: 56px;
-  height: 50px;
-  border: 5px solid #80602d;
-  border-radius: 7px;
-  background: linear-gradient(#caa04d, #a97932);
-  box-shadow: inset 0 0 0 5px rgba(255, 239, 184, 0.24);
+  display: block;
+  bottom: 50px;
+  width: 14px;
+  height: 24px;
+  border-radius: 10px;
+  background: #654631;
+}
+
+.dog-ear-left { right: 34px; transform: rotate(18deg); }
+.dog-ear-right { right: 6px; transform: rotate(-18deg); }
+
+.animal-eye {
+  bottom: 55px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1f2326;
+}
+
+.animal-eye-one { right: 30px; }
+.animal-eye-two { right: 17px; }
+
+.animal-nose {
+  right: 21px;
+  bottom: 47px;
+  width: 8px;
+  height: 7px;
+  border-radius: 50%;
+  background: #222;
+}
+
+.cat-whiskers {
+  right: 5px;
+  bottom: 50px;
+  width: 20px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(30, 33, 36, 0.78);
+  box-shadow: 0 6px 0 rgba(30, 33, 36, 0.78);
 }
 
 .hazard.car::before {
@@ -1080,145 +1237,6 @@ button {
   border-radius: 8px 8px 4px 4px;
   background: #5f90aa;
   box-shadow: -9px 28px 0 -5px #fff2a0, 27px 28px 0 -5px #fff2a0;
-}
-
-.hazard.windbox::after {
-  content: "";
-  position: absolute;
-  left: -12px;
-  top: 16px;
-  width: 26px;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.72);
-  box-shadow: -16px 14px 0 rgba(255,255,255,0.58);
-}
-
-.hazard.animal::before,
-.hazard.cat::before,
-.hazard.dog::before {
-  content: "";
-  position: absolute;
-  left: 8px;
-  bottom: 30px;
-  width: 52px;
-  height: 32px;
-  border-radius: 22px 22px 12px 12px;
-  background: #8f7152;
-  box-shadow: 38px -8px 0 -14px #8f7152, -10px 18px 0 -9px #574332, 9px 18px 0 -9px #574332, 32px 18px 0 -9px #574332;
-}
-
-.hazard.cat::before {
-  height: 29px;
-  border-radius: 24px 24px 10px 10px;
-  background: #74786f;
-  box-shadow: 38px -8px 0 -14px #74786f, -10px 18px 0 -9px #4d504a, 9px 18px 0 -9px #4d504a, 32px 18px 0 -9px #4d504a, -9px -7px 0 -5px #74786f;
-}
-
-.hazard.dog::before {
-  background: #a4744e;
-  box-shadow: 38px -8px 0 -14px #a4744e, -10px 18px 0 -9px #5b402d, 9px 18px 0 -9px #5b402d, 32px 18px 0 -9px #5b402d, 51px -13px 0 -16px #5b402d;
-}
-
-.hazard.animal::after,
-.hazard.cat::after,
-.hazard.dog::after {
-  content: "";
-  position: absolute;
-  right: 9px;
-  bottom: 58px;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: #2f241b;
-}
-
-.hazard.cat::after {
-  box-shadow: -14px -9px 0 -5px #74786f, 1px -10px 0 -5px #74786f, -7px 7px 0 -5px #2f241b;
-}
-
-.hazard.dog::after {
-  box-shadow: -2px 14px 0 -4px #5b402d, -12px 1px 0 -6px #2f241b;
-}
-
-.hazard.bird::before {
-  content: "";
-  position: absolute;
-  left: 12px;
-  top: 24px;
-  width: 44px;
-  height: 28px;
-  border-radius: 50%;
-  background: #5e83a8;
-  box-shadow: -14px -7px 0 -6px #88a9c9, 18px -8px 0 -5px #88a9c9;
-}
-
-.hazard.ball::before {
-  content: "";
-  position: absolute;
-  left: 18px;
-  bottom: 28px;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 32% 28%, #ffffff, #e7e7e7 35%, #d9534f 36% 55%, #ffffff 56%);
-  border: 3px solid #426a9c;
-}
-
-.hazard.ball::before {
-  content: "";
-  left: 14px;
-  bottom: 20px;
-  width: 58px;
-  height: 58px;
-  border: 4px solid #315f93;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 34% 30%, rgba(255,255,255,0.85) 0 11px, transparent 12px),
-    linear-gradient(135deg, transparent 0 42%, rgba(255,255,255,0.72) 43% 50%, transparent 51%),
-    linear-gradient(45deg, transparent 0 42%, rgba(255,255,255,0.72) 43% 50%, transparent 51%),
-    #e85c4a;
-  box-shadow: 0 5px 0 rgba(37,48,68,0.18);
-}
-
-.hazard.cat::before,
-.hazard.dog::before {
-  content: "";
-  left: 17px;
-  bottom: 24px;
-  width: 52px;
-  height: 48px;
-  border-radius: 45% 45% 42% 42%;
-  box-shadow: inset -5px -6px 0 rgba(0,0,0,0.12);
-}
-
-.hazard.cat::before {
-  background: #777b72;
-  clip-path: polygon(10% 22%, 21% 0, 35% 18%, 65% 18%, 79% 0, 90% 22%, 100% 45%, 88% 100%, 12% 100%, 0 45%);
-}
-
-.hazard.dog::before {
-  background: #a87852;
-  border-radius: 46% 46% 42% 42%;
-  box-shadow: inset -5px -6px 0 rgba(0,0,0,0.12), -18px 5px 0 -7px #6a4935, 18px 5px 0 -7px #6a4935;
-}
-
-.hazard.cat::after,
-.hazard.dog::after {
-  content: "";
-  position: absolute;
-  left: 35px;
-  bottom: 47px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #222;
-  box-shadow: 16px 0 0 #222, 8px 13px 0 -1px #222;
-}
-
-.hazard.dog::after {
-  bottom: 46px;
-  box-shadow: 16px 0 0 #222, 8px 12px 0 1px #4a2f22;
 }
 
 .hazard.hidden {
@@ -1417,8 +1435,8 @@ button {
 }
 
 @keyframes roamCross {
-  from { transform: translate(90px, -58px); }
-  to { transform: translate(-170px, 72px); }
+  from { transform: translate(105px, -74px); }
+  to { transform: translate(-168px, 86px); }
 }
 
 @media (max-width: 940px) {
