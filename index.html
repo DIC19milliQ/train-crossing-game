@@ -37,6 +37,21 @@
           <div id="progressBadge" class="progress-badge">ステージ 1 / 5</div>
           <div id="statusBadge" class="status-badge">すすめるよ！</div>
         </div>
+        <div id="speedMeter" class="speed-meter" aria-label="スピードメーター">
+          <div class="speed-meter-top">
+            <span>スピード</span>
+            <strong id="speedLabel">ゆっくり</strong>
+          </div>
+          <div class="speed-track">
+            <span class="speed-fill" id="speedFill"></span>
+          </div>
+          <div class="speed-lamps" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
       </div>
 
       <div id="stage" class="stage stage-town" aria-live="polite">
@@ -79,8 +94,10 @@
       </div>
 
       <div class="controls" aria-label="そうさ">
-        <button id="actionButton" class="control-button stop" type="button">とまる</button>
+        <button id="brakeButton" class="control-button stop" type="button">ブレーキ</button>
+        <button id="speedButton" class="control-button go" type="button">スピード</button>
       </div>
+      <p class="control-hint">スペース: ブレーキ / エンター: スピードきりかえ</p>
     </section>
 
     <section id="resultScreen" class="screen screen-result" aria-labelledby="resultHeading">

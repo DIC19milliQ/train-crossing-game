@@ -162,6 +162,15 @@ button {
 .train-card.is-selected {
   border-color: #e3a22e;
   background: #fff6d6;
+  box-shadow: 0 7px 0 rgba(39, 112, 174, 0.16), 0 0 0 5px rgba(227, 162, 46, 0.22);
+}
+
+.train-card:focus-visible,
+.big-button:focus-visible,
+.control-button:focus-visible,
+.sound-button:focus-visible {
+  outline: 5px solid rgba(255, 210, 74, 0.85);
+  outline-offset: 4px;
 }
 
 .train-card strong {
@@ -213,6 +222,73 @@ button {
   gap: 10px;
 }
 
+.speed-meter {
+  min-width: 230px;
+  padding: 10px 14px;
+  border: 3px solid rgba(32, 70, 92, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 5px 0 rgba(24, 72, 92, 0.13);
+}
+
+.speed-meter-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #274458;
+  font-weight: 900;
+  font-size: 15px;
+}
+
+.speed-meter-top strong {
+  color: #155d94;
+  font-size: 18px;
+}
+
+.speed-track {
+  position: relative;
+  height: 14px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #c7d3d9;
+}
+
+.speed-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--speed-percent, 25%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4ea56b, #d9b33e, #d85a4f);
+  transition: width 180ms ease;
+}
+
+.speed-lamps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.speed-lamps span {
+  height: 10px;
+  border-radius: 999px;
+  background: #c5ced4;
+}
+
+.speed-lamps span.is-on {
+  background: #2f7fb4;
+}
+
+.speed-meter.is-braking .speed-meter-top strong {
+  color: #c93434;
+}
+
+.speed-meter.is-stopped .speed-fill {
+  width: 0;
+}
+
 .stage-badge,
 .progress-badge,
 .status-badge {
@@ -251,8 +327,8 @@ button {
 .stage {
   position: relative;
   width: min(1160px, 100%);
-  height: min(59vh, 540px);
-  min-height: 390px;
+  height: min(52vh, 500px);
+  min-height: 340px;
   margin: 0 auto;
   overflow: hidden;
   border: 6px solid rgba(255, 255, 255, 0.82);
@@ -904,35 +980,52 @@ button {
 
 .hazard {
   position: absolute;
-  width: 70px;
-  height: 78px;
+  width: 84px;
+  height: 92px;
   z-index: 10;
 }
 
 .crossing-hazard {
   left: 50%;
-  bottom: 86px;
+  bottom: 112px;
   transform: translateX(-50%);
   z-index: 8;
 }
 
 .roam-hazard {
-  left: 55%;
-  bottom: 126px;
+  left: 72%;
+  bottom: 156px;
   transform: translateX(-50%);
 }
 
+.hazard-label {
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  min-width: 58px;
+  padding: 3px 8px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  color: #ffffff;
+  background: rgba(37, 48, 68, 0.86);
+  font-size: 15px;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
+  z-index: 3;
+}
+
 .roam-hazard.is-moving {
-  animation: roamCross 2.7s ease-in-out infinite alternate;
+  animation: roamCross 3.8s ease-in-out infinite alternate;
 }
 
 .hazard.person::before {
   content: "";
   position: absolute;
-  left: 21px;
-  top: 0;
-  width: 26px;
-  height: 26px;
+  left: 27px;
+  top: 3px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: #e8bd86;
   box-shadow: inset -4px -4px 0 rgba(130, 72, 40, 0.14);
@@ -941,13 +1034,13 @@ button {
 .hazard.person::after {
   content: "";
   position: absolute;
-  left: 14px;
-  top: 27px;
-  width: 40px;
-  height: 45px;
-  border-radius: 12px 12px 9px 9px;
-  background: linear-gradient(#d58a4b, #b96236);
-  box-shadow: -15px 15px 0 -8px #4b6fdc, 15px 15px 0 -8px #4b6fdc;
+  left: 20px;
+  top: 35px;
+  width: 44px;
+  height: 48px;
+  border-radius: 14px 14px 9px 9px;
+  background: linear-gradient(#4f84d6, #315f9f);
+  box-shadow: -17px 14px 0 -9px #e8bd86, 17px 14px 0 -9px #e8bd86, -10px 39px 0 -8px #293955, 10px 39px 0 -8px #293955;
 }
 
 .hazard.box::before,
@@ -962,6 +1055,31 @@ button {
   border-radius: 7px;
   background: linear-gradient(#caa04d, #a97932);
   box-shadow: inset 0 0 0 5px rgba(255, 239, 184, 0.24);
+}
+
+.hazard.car::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  bottom: 4px;
+  width: 60px;
+  height: 64px;
+  border: 4px solid rgba(38, 55, 70, 0.38);
+  border-radius: 18px 18px 12px 12px;
+  background: linear-gradient(#f3c15a 0 18%, #d77b35 18% 100%);
+  box-shadow: inset 0 9px 0 rgba(255,255,255,0.2);
+}
+
+.hazard.car::after {
+  content: "";
+  position: absolute;
+  left: 25px;
+  bottom: 42px;
+  width: 34px;
+  height: 18px;
+  border-radius: 8px 8px 4px 4px;
+  background: #5f90aa;
+  box-shadow: -9px 28px 0 -5px #fff2a0, 27px 28px 0 -5px #fff2a0;
 }
 
 .hazard.windbox::after {
@@ -982,17 +1100,24 @@ button {
   content: "";
   position: absolute;
   left: 8px;
-  bottom: 12px;
-  width: 48px;
-  height: 30px;
+  bottom: 30px;
+  width: 52px;
+  height: 32px;
   border-radius: 22px 22px 12px 12px;
   background: #8f7152;
-  box-shadow: 36px -8px 0 -15px #8f7152, -9px 16px 0 -9px #574332, 9px 16px 0 -9px #574332, 30px 16px 0 -9px #574332;
+  box-shadow: 38px -8px 0 -14px #8f7152, -10px 18px 0 -9px #574332, 9px 18px 0 -9px #574332, 32px 18px 0 -9px #574332;
 }
 
 .hazard.cat::before {
-  background: #777a72;
-  box-shadow: 36px -8px 0 -15px #777a72, -9px 16px 0 -9px #4d504a, 9px 16px 0 -9px #4d504a, 30px 16px 0 -9px #4d504a;
+  height: 29px;
+  border-radius: 24px 24px 10px 10px;
+  background: #74786f;
+  box-shadow: 38px -8px 0 -14px #74786f, -10px 18px 0 -9px #4d504a, 9px 18px 0 -9px #4d504a, 32px 18px 0 -9px #4d504a, -9px -7px 0 -5px #74786f;
+}
+
+.hazard.dog::before {
+  background: #a4744e;
+  box-shadow: 38px -8px 0 -14px #a4744e, -10px 18px 0 -9px #5b402d, 9px 18px 0 -9px #5b402d, 32px 18px 0 -9px #5b402d, 51px -13px 0 -16px #5b402d;
 }
 
 .hazard.animal::after,
@@ -1000,12 +1125,20 @@ button {
 .hazard.dog::after {
   content: "";
   position: absolute;
-  right: 8px;
-  bottom: 39px;
-  width: 10px;
-  height: 10px;
+  right: 9px;
+  bottom: 58px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: #2f241b;
+}
+
+.hazard.cat::after {
+  box-shadow: -14px -9px 0 -5px #74786f, 1px -10px 0 -5px #74786f, -7px 7px 0 -5px #2f241b;
+}
+
+.hazard.dog::after {
+  box-shadow: -2px 14px 0 -4px #5b402d, -12px 1px 0 -6px #2f241b;
 }
 
 .hazard.bird::before {
@@ -1023,13 +1156,69 @@ button {
 .hazard.ball::before {
   content: "";
   position: absolute;
-  left: 17px;
-  bottom: 12px;
-  width: 42px;
-  height: 42px;
+  left: 18px;
+  bottom: 28px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: radial-gradient(circle at 32% 28%, #ffffff, #e7e7e7 35%, #d9534f 36% 55%, #ffffff 56%);
   border: 3px solid #426a9c;
+}
+
+.hazard.ball::before {
+  content: "";
+  left: 14px;
+  bottom: 20px;
+  width: 58px;
+  height: 58px;
+  border: 4px solid #315f93;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255,255,255,0.85) 0 11px, transparent 12px),
+    linear-gradient(135deg, transparent 0 42%, rgba(255,255,255,0.72) 43% 50%, transparent 51%),
+    linear-gradient(45deg, transparent 0 42%, rgba(255,255,255,0.72) 43% 50%, transparent 51%),
+    #e85c4a;
+  box-shadow: 0 5px 0 rgba(37,48,68,0.18);
+}
+
+.hazard.cat::before,
+.hazard.dog::before {
+  content: "";
+  left: 17px;
+  bottom: 24px;
+  width: 52px;
+  height: 48px;
+  border-radius: 45% 45% 42% 42%;
+  box-shadow: inset -5px -6px 0 rgba(0,0,0,0.12);
+}
+
+.hazard.cat::before {
+  background: #777b72;
+  clip-path: polygon(10% 22%, 21% 0, 35% 18%, 65% 18%, 79% 0, 90% 22%, 100% 45%, 88% 100%, 12% 100%, 0 45%);
+}
+
+.hazard.dog::before {
+  background: #a87852;
+  border-radius: 46% 46% 42% 42%;
+  box-shadow: inset -5px -6px 0 rgba(0,0,0,0.12), -18px 5px 0 -7px #6a4935, 18px 5px 0 -7px #6a4935;
+}
+
+.hazard.cat::after,
+.hazard.dog::after {
+  content: "";
+  position: absolute;
+  left: 35px;
+  bottom: 47px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #222;
+  box-shadow: 16px 0 0 #222, 8px 13px 0 -1px #222;
+}
+
+.hazard.dog::after {
+  bottom: 46px;
+  box-shadow: 16px 0 0 #222, 8px 12px 0 1px #4a2f22;
 }
 
 .hazard.hidden {
@@ -1038,14 +1227,14 @@ button {
 
 .controls {
   width: min(840px, 100%);
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
   margin: 0 auto;
 }
 
 .control-button {
-  width: min(560px, 100%);
-  min-height: 94px;
+  min-height: 82px;
   font-size: clamp(30px, 5.7vw, 52px);
 }
 
@@ -1060,6 +1249,15 @@ button {
 .control-button:disabled {
   cursor: default;
   filter: saturate(0.75) brightness(0.95);
+}
+
+.control-hint {
+  width: min(840px, 100%);
+  margin: -4px auto 0;
+  color: #244257;
+  font-size: clamp(16px, 2.2vw, 22px);
+  font-weight: 900;
+  text-align: center;
 }
 
 .screen-result {
@@ -1219,8 +1417,8 @@ button {
 }
 
 @keyframes roamCross {
-  from { transform: translate(-95px, -4px); }
-  to { transform: translate(42px, 6px); }
+  from { transform: translate(90px, -58px); }
+  to { transform: translate(-170px, 72px); }
 }
 
 @media (max-width: 940px) {
@@ -1235,6 +1433,7 @@ button {
 
   .hud {
     align-items: stretch;
+    flex-wrap: wrap;
   }
 
   .stage-badge,
@@ -1243,8 +1442,12 @@ button {
     flex: 1;
   }
 
+  .speed-meter {
+    flex: 1 1 100%;
+  }
+
   .stage {
-    min-height: 355px;
+    min-height: 320px;
     height: 55vh;
   }
 
@@ -1319,7 +1522,8 @@ button {
   }
 
   .controls {
-    display: flex;
+    grid-template-columns: 1fr;
+    gap: 11px;
   }
 
   .control-button {

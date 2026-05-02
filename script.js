@@ -27,15 +27,29 @@ const resultHeading = document.getElementById("resultHeading");
 const resultText = document.getElementById("resultText");
 const confetti = document.getElementById("confetti");
 const soundButton = document.getElementById("soundButton");
-const actionButton = document.getElementById("actionButton");
+const brakeButton = document.getElementById("brakeButton");
+const speedButton = document.getElementById("speedButton");
+const speedMeter = document.getElementById("speedMeter");
+const speedLabel = document.getElementById("speedLabel");
+const speedFill = document.getElementById("speedFill");
 
 const trains = [
-  { id: "hayabusa", name: "はやぶさ風", className: "train-hayabusa bullet", speed: 48, speedLabel: "はやい" },
-  { id: "komachi", name: "こまち風", className: "train-komachi bullet", speed: 48, speedLabel: "はやい" },
-  { id: "yellow", name: "ドクターイエロー風", className: "train-yellow bullet", speed: 44, speedLabel: "はやめ" },
-  { id: "local", name: "普通電車風", className: "train-local local", speed: 39, speedLabel: "ふつう" },
-  { id: "freight", name: "貨物列車風", className: "train-freight freight", speed: 34, speedLabel: "ゆっくり" }
+  { id: "hayabusa", name: "はやぶさ風", className: "train-hayabusa bullet", baseSpeed: 46, accel: 24, brake: 36, speedLabel: "はやい" },
+  { id: "komachi", name: "こまち風", className: "train-komachi bullet", baseSpeed: 46, accel: 24, brake: 36, speedLabel: "はやい" },
+  { id: "yellow", name: "ドクターイエロー風", className: "train-yellow bullet", baseSpeed: 42, accel: 22, brake: 39, speedLabel: "はやめ" },
+  { id: "local", name: "普通電車風", className: "train-local local", baseSpeed: 38, accel: 20, brake: 42, speedLabel: "ふつう" },
+  { id: "freight", name: "貨物列車風", className: "train-freight freight", baseSpeed: 34, accel: 15, brake: 34, speedLabel: "ゆっくり" }
 ];
+
+const speedSteps = [
+  { label: "ゆっくり", multiplier: 0.68 },
+  { label: "ふつう", multiplier: 0.9 },
+  { label: "はやい", multiplier: 1.08 },
+  { label: "さいこうそく", multiplier: 1.24 }
+];
+
+const crossingHazards = ["person", "car"];
+const obstacleHazards = ["ball", "cat", "dog"];
 
 const stagePlan = [
   { eventType: "crossing", sign: "つぎのまちへ" },
@@ -49,7 +63,7 @@ const backgroundThemes = [
   {
     label: "まち",
     className: "stage-town",
-    hazards: ["person", "box"],
+    hazards: ["ball", "cat"],
     decor: [
       ["building", "left:8%;"],
       ["building", "left:17%; height:64px;"],
@@ -59,7 +73,7 @@ const backgroundThemes = [
   {
     label: "こうえん",
     className: "stage-park",
-    hazards: ["person", "animal", "box"],
+    hazards: ["dog", "ball", "cat"],
     decor: [
       ["park-tree", "left:10%;"],
       ["park-tree", "right:22%;"],
@@ -69,7 +83,7 @@ const backgroundThemes = [
   {
     label: "かわとはし",
     className: "stage-river",
-    hazards: ["person", "box"],
+    hazards: ["bird", "ball"],
     decor: [
       ["river", ""],
       ["bridge", ""],
@@ -99,7 +113,7 @@ const backgroundThemes = [
   {
     label: "やま",
     className: "stage-mountain",
-    hazards: ["person", "box", "dog"],
+    hazards: ["dog", "ball", "cat"],
     decor: [
       ["rice-tree", "left:12%; transform:scale(.9);"],
       ["field-row", "right:18%;"],
@@ -119,7 +133,7 @@ const backgroundThemes = [
   {
     label: "ビルのまち",
     className: "stage-city",
-    hazards: ["person", "box", "ball"],
+    hazards: ["cat", "dog", "ball"],
     decor: [
       ["building", "left:7%; height:95px;"],
       ["building", "left:16%; height:72px;"],
@@ -129,7 +143,7 @@ const backgroundThemes = [
   {
     label: "ゆうえんち",
     className: "stage-amusement",
-    hazards: ["person", "ball", "cat"],
+    hazards: ["dog", "ball", "cat"],
     decor: [
       ["wheel-bg", "left:10%;"],
       ["building", "right:20%; height:58px;"],
@@ -139,7 +153,7 @@ const backgroundThemes = [
   {
     label: "ドームのまち",
     className: "stage-dome",
-    hazards: ["person", "box", "ball"],
+    hazards: ["cat", "ball", "windbox"],
     decor: [
       ["dome", "left:9%;"],
       ["building", "right:18%; height:70px;"],
@@ -149,7 +163,7 @@ const backgroundThemes = [
   {
     label: "タワーのまち",
     className: "stage-tower",
-    hazards: ["person", "box", "bird"],
+    hazards: ["bird", "cat", "ball"],
     decor: [
       ["tower-red", "left:12%;"],
       ["building", "right:18%; height:70px;"],
@@ -182,7 +196,10 @@ const game = {
   state: "title",
   selectedTrain: trains[0],
   trainX: 0,
-  speed: 34,
+  currentSpeed: 0,
+  targetSpeed: 0,
+  speedStepIndex: 0,
+  braking: false,
   running: true,
   stageIndex: 0,
   danger: null,
@@ -260,13 +277,28 @@ function applyTrainStyle() {
   trainNameLabel.textContent = game.selectedTrain.name;
 }
 
+function getStepSpeed(stepIndex = game.speedStepIndex) {
+  return game.selectedTrain.baseSpeed * speedSteps[stepIndex].multiplier;
+}
+
+function setSpeedStep(stepIndex) {
+  game.speedStepIndex = stepIndex % speedSteps.length;
+  game.targetSpeed = getStepSpeed();
+  game.braking = false;
+  game.running = true;
+  updateSpeedMeter();
+}
+
 function resetGame() {
   cancelAnimationFrame(game.animationId);
   unlockAudio();
   stages = buildStageRoute();
   applyTrainStyle();
-  game.speed = game.selectedTrain.speed;
   game.trainX = 0;
+  game.speedStepIndex = 0;
+  game.currentSpeed = getStepSpeed(0);
+  game.targetSpeed = game.currentSpeed;
+  game.braking = false;
   game.running = true;
   game.stageIndex = 0;
   game.danger = null;
@@ -276,6 +308,7 @@ function resetGame() {
   game.lastTime = 0;
   updateStageView();
   updateTrainPosition();
+  updateSpeedMeter();
   setDanger(null);
   setStatus("すすめるよ！", "safe");
   showScreen("playing");
@@ -290,7 +323,7 @@ function currentStage() {
 }
 
 function randomDangerPoint() {
-  return 48 + Math.random() * 46;
+  return 28 + Math.random() * 34;
 }
 
 function buildStageRoute() {
@@ -324,8 +357,8 @@ function chooseEvent(stageInfo) {
   return stageInfo.eventType;
 }
 
-function chooseHazard(stageInfo) {
-  const hazards = stageInfo.hazards;
+function chooseHazard(kind) {
+  const hazards = kind === "crossing" ? crossingHazards : obstacleHazards;
   return hazards[Math.floor(Math.random() * hazards.length)];
 }
 
@@ -346,33 +379,75 @@ function setStatus(text, mode) {
   statusBadge.textContent = text;
   statusBadge.classList.toggle("danger", mode === "danger");
   statusBadge.classList.toggle("wait", mode === "wait");
-  updateActionButton();
+  updateControls();
 }
 
-function updateActionButton() {
-  if (!actionButton) {
+function getHazardMarkup(hazard) {
+  const templates = {
+    person: `
+      <span class="person-head"></span>
+      <span class="person-body"></span>
+      <span class="person-arm person-arm-left"></span>
+      <span class="person-arm person-arm-right"></span>
+      <span class="person-leg person-leg-left"></span>
+      <span class="person-leg person-leg-right"></span>
+    `,
+    cat: `
+      <span class="animal-tail cat-tail"></span>
+      <span class="animal-body cat-body"></span>
+      <span class="animal-leg animal-leg-one"></span>
+      <span class="animal-leg animal-leg-two"></span>
+      <span class="animal-head cat-head"></span>
+      <span class="animal-ear cat-ear-left"></span>
+      <span class="animal-ear cat-ear-right"></span>
+      <span class="animal-eye animal-eye-one"></span>
+      <span class="animal-eye animal-eye-two"></span>
+      <span class="animal-nose cat-nose"></span>
+      <span class="cat-whiskers"></span>
+    `,
+    dog: `
+      <span class="animal-tail dog-tail"></span>
+      <span class="animal-body dog-body"></span>
+      <span class="animal-leg animal-leg-one"></span>
+      <span class="animal-leg animal-leg-two"></span>
+      <span class="animal-head dog-head"></span>
+      <span class="dog-ear dog-ear-left"></span>
+      <span class="dog-ear dog-ear-right"></span>
+      <span class="animal-eye animal-eye-one"></span>
+      <span class="animal-eye animal-eye-two"></span>
+      <span class="animal-nose dog-nose"></span>
+    `
+  };
+
+  return templates[hazard] || "";
+}
+
+function updateControls() {
+  if (!brakeButton || !speedButton) {
     return;
   }
 
-  const canGo = !game.running && !game.danger && (game.state === "playing" || game.state === "stopped" || game.state === "danger");
-  const shouldStop = game.running || Boolean(game.danger);
+  brakeButton.disabled = game.braking || game.currentSpeed <= 0.1;
+  brakeButton.textContent = game.braking ? "ブレーキ中" : "ブレーキ";
+  speedButton.textContent = `スピード ${speedSteps[game.speedStepIndex].label}`;
+  updateSpeedMeter();
+}
 
-  actionButton.disabled = false;
-  actionButton.classList.toggle("go", canGo);
-  actionButton.classList.toggle("stop", shouldStop || !canGo);
-
-  if (canGo) {
-    actionButton.textContent = "すすむ";
+function updateSpeedMeter() {
+  if (!speedMeter || !speedLabel || !speedFill) {
     return;
   }
 
-  if (!game.running && game.danger) {
-    actionButton.textContent = "かくにん中";
-    actionButton.disabled = true;
-    return;
-  }
-
-  actionButton.textContent = "とまる";
+  const maxSpeed = getStepSpeed(speedSteps.length - 1);
+  const percent = Math.max(0, Math.min(100, (game.currentSpeed / maxSpeed) * 100));
+  const displayLabel = game.currentSpeed <= 0.8 ? "ていし" : game.braking ? "ブレーキ" : speedSteps[game.speedStepIndex].label;
+  speedLabel.textContent = displayLabel;
+  speedFill.style.setProperty("--speed-percent", `${percent}%`);
+  speedMeter.classList.toggle("is-braking", game.braking);
+  speedMeter.classList.toggle("is-stopped", game.currentSpeed <= 0.8);
+  speedMeter.querySelectorAll(".speed-lamps span").forEach((lamp, index) => {
+    lamp.classList.toggle("is-on", game.currentSpeed > 0.8 && index <= game.speedStepIndex);
+  });
 }
 
 function setDanger(danger) {
@@ -386,15 +461,17 @@ function setDanger(danger) {
 
   hazardElement.className = isCrossingDanger ? `hazard crossing-hazard ${danger.hazard}` : "hazard crossing-hazard hidden";
   roamHazardElement.className = isRoamDanger ? `hazard roam-hazard is-moving ${danger.hazard}` : "hazard roam-hazard hidden";
-  updateActionButton();
+  hazardElement.innerHTML = isCrossingDanger ? getHazardMarkup(danger.hazard) : "";
+  roamHazardElement.innerHTML = isRoamDanger ? getHazardMarkup(danger.hazard) : "";
+  updateControls();
   updateLoops();
 }
 
 function triggerDanger() {
   const stageInfo = currentStage();
   const kind = chooseEvent(stageInfo);
-  const hazard = chooseHazard(stageInfo);
-  const clearDelay = kind === "crossing" ? 3000 + Math.random() * 1500 : 2400 + Math.random() * 1200;
+  const hazard = chooseHazard(kind);
+  const clearDelay = kind === "crossing" ? 3000 + Math.random() * 1500 : 3800 + Math.random() * 1400;
 
   game.dangerClearAt = performance.now() + clearDelay;
   setDanger({ kind, hazard });
@@ -427,6 +504,38 @@ function getStageMetrics() {
   };
 }
 
+function updateMotion(deltaSeconds) {
+  const train = game.selectedTrain;
+  const rate = game.braking ? train.brake : train.accel;
+
+  if (game.currentSpeed < game.targetSpeed) {
+    game.currentSpeed = Math.min(game.targetSpeed, game.currentSpeed + rate * deltaSeconds);
+  } else if (game.currentSpeed > game.targetSpeed) {
+    game.currentSpeed = Math.max(game.targetSpeed, game.currentSpeed - rate * deltaSeconds);
+  }
+
+  if (game.braking && game.currentSpeed <= 0.8) {
+    game.currentSpeed = 0;
+    game.targetSpeed = 0;
+    game.running = false;
+    game.braking = false;
+    showScreen(game.danger ? "danger" : "stopped");
+    setStatus(game.danger ? "あんぜんかくにん" : "ていし", game.danger ? "danger" : "wait");
+  }
+
+  updateSpeedMeter();
+}
+
+function getStoppingDistance() {
+  const brake = Math.max(1, game.selectedTrain.brake);
+  return (game.currentSpeed * game.currentSpeed) / (2 * brake);
+}
+
+function getWarningDistance() {
+  const stepBonus = game.speedStepIndex * 22;
+  return 310 + getStoppingDistance() + stepBonus;
+}
+
 function updateGame(time) {
   if (!game.lastTime) {
     game.lastTime = time;
@@ -435,14 +544,16 @@ function updateGame(time) {
   const deltaSeconds = Math.min((time - game.lastTime) / 1000, 0.05);
   game.lastTime = time;
 
-  if (game.running) {
-    game.trainX += game.speed * deltaSeconds;
+  updateMotion(deltaSeconds);
+  if (game.currentSpeed > 0) {
+    game.trainX += game.currentSpeed * deltaSeconds;
     updateTrainPosition();
   }
 
   const metrics = getStageMetrics();
 
-  if (!game.danger && !game.eventDone && game.trainX >= game.nextDangerAt && game.trainX < metrics.crossingStart - 150) {
+  const warningStart = Math.max(game.nextDangerAt, metrics.crossingStart - getWarningDistance());
+  if (!game.danger && !game.eventDone && game.trainX >= warningStart && game.trainX < metrics.crossingStart - 128) {
     triggerDanger();
   }
 
@@ -489,12 +600,13 @@ function completeStage(metrics) {
   updateTrainPosition();
   setDanger(null);
   setStatus("つぎのステージ", "safe");
+  updateControls();
   playToneSet("next");
   updateLoops();
   game.animationId = requestAnimationFrame(updateGame);
 }
 
-function goTrain() {
+function accelerateTrain() {
   unlockAudio();
 
   if (game.state === "title") {
@@ -505,42 +617,119 @@ function goTrain() {
   }
 
   if (game.state === "playing" || game.state === "stopped" || game.state === "danger") {
-    game.running = true;
+    if (!game.running && game.currentSpeed <= 0.8 && !game.danger) {
+      game.targetSpeed = getStepSpeed(game.speedStepIndex);
+      game.braking = false;
+      game.running = true;
+      updateSpeedMeter();
+    } else {
+      setSpeedStep((game.speedStepIndex + 1) % speedSteps.length);
+    }
     showScreen(game.danger ? "danger" : "playing");
-    setStatus(game.danger ? "とまって！" : "すすめるよ！", game.danger ? "danger" : "safe");
+    setStatus(game.danger ? "とまって！" : speedSteps[game.speedStepIndex].label, game.danger ? "danger" : "safe");
     playToneSet("go");
-    updateActionButton();
+    updateControls();
     updateLoops();
   }
 }
 
-function stopTrain() {
+function brakeTrain() {
   unlockAudio();
 
   if (game.state !== "playing" && game.state !== "danger" && game.state !== "stopped") {
     return;
   }
 
-  game.running = false;
-  showScreen(game.danger ? "danger" : "stopped");
-  setStatus(game.danger ? "あんぜんかくにん" : "とまったよ", game.danger ? "danger" : "wait");
+  if (game.currentSpeed <= 0.8 || game.braking) {
+    return;
+  }
+
+  game.braking = true;
+  game.targetSpeed = 0;
+  showScreen(game.danger ? "danger" : "playing");
+  setStatus("ブレーキ！", game.danger ? "danger" : "wait");
   playToneSet("stop");
-  updateActionButton();
+  updateControls();
   updateLoops();
 }
 
-function mainAction() {
+function confirmBeforeGame() {
   if (game.state === "title") {
-    goTrain();
+    showScreen("selectTrain");
+    startBgm();
+    playToneSet("select");
     return;
   }
 
-  if (game.running || game.danger) {
-    stopTrain();
+  if (game.state === "selectTrain") {
+    resetGame();
     return;
   }
 
-  goTrain();
+  if (game.state === "clear" || game.state === "gameover") {
+    showScreen("title");
+  }
+}
+
+function moveTrainSelection(direction) {
+  const currentIndex = trains.findIndex((train) => train.id === game.selectedTrain.id);
+  const nextIndex = (currentIndex + direction + trains.length) % trains.length;
+  selectTrain(trains[nextIndex].id);
+  const selectedCard = document.querySelector(`.train-card[data-train-id="${trains[nextIndex].id}"]`);
+  if (selectedCard) {
+    selectedCard.focus({ preventScroll: true });
+  }
+  playToneSet("select");
+}
+
+function handleMenuKeys(event) {
+  const code = event.code;
+
+  if (game.state === "title") {
+    if (code === "Space" || code === "Enter") {
+      event.preventDefault();
+      unlockAudio();
+      confirmBeforeGame();
+      return true;
+    }
+    return false;
+  }
+
+  if (game.state === "selectTrain") {
+    if (code === "ArrowRight" || code === "ArrowDown") {
+      event.preventDefault();
+      moveTrainSelection(1);
+      return true;
+    }
+    if (code === "ArrowLeft" || code === "ArrowUp") {
+      event.preventDefault();
+      moveTrainSelection(-1);
+      return true;
+    }
+    if (code === "Space" || code === "Enter") {
+      event.preventDefault();
+      resetGame();
+      return true;
+    }
+    if (code === "Escape") {
+      event.preventDefault();
+      showScreen("title");
+      return true;
+    }
+    return false;
+  }
+
+  if (game.state === "clear" || game.state === "gameover") {
+    if (code === "Space" || code === "Enter") {
+      event.preventDefault();
+      showScreen("title");
+      playToneSet("select");
+      return true;
+    }
+    return false;
+  }
+
+  return false;
 }
 
 function endGame(clear) {
@@ -767,7 +956,8 @@ document.getElementById("retryButton").addEventListener("click", () => {
   showScreen("title");
 });
 
-actionButton.addEventListener("click", mainAction);
+brakeButton.addEventListener("click", brakeTrain);
+speedButton.addEventListener("click", accelerateTrain);
 
 soundButton.addEventListener("click", () => {
   audio.enabled = !audio.enabled;
@@ -783,14 +973,18 @@ soundButton.addEventListener("click", () => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (handleMenuKeys(event)) {
+    return;
+  }
+
   if (event.code === "Space") {
     event.preventDefault();
-    mainAction();
+    brakeTrain();
   }
 
   if (event.code === "Enter" || event.code === "ArrowRight") {
     event.preventDefault();
-    mainAction();
+    accelerateTrain();
   }
 });
 
@@ -801,5 +995,5 @@ buildTrainChoices();
 applyTrainStyle();
 updateStageView();
 updateSoundButton();
-updateActionButton();
+updateControls();
 showScreen("title");
