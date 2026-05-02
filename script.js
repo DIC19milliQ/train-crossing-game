@@ -336,13 +336,19 @@ function randomDangerPoint() {
   return 28 + Math.random() * 34;
 }
 
+function getStageEventChances(index) {
+  return {
+    crossingChance: index === 0 ? 1 : index === 1 ? 0.9 : 0.75,
+    roamChance: index === 0 ? 0.25 : index === 1 ? 0.45 : 0.7
+  };
+}
+
 function buildStageRoute() {
   const shuffledThemes = shuffle(backgroundThemes);
   return stagePlan.map((slot, index) => {
     const theme = shuffledThemes[index % shuffledThemes.length];
     const weather = weatherOptions[Math.floor(Math.random() * weatherOptions.length)];
-    const crossingChance = index === 0 ? 1 : index === 1 ? 0.8 : 0.6;
-    const roamChance = index === 0 ? 0.1 : index === 1 ? 0.3 : 0.5;
+    const { crossingChance, roamChance } = getStageEventChances(index);
     const events = [];
 
     if (index === 0 || Math.random() < crossingChance) {
@@ -527,9 +533,10 @@ function triggerDanger() {
 
 function clearDanger() {
   const finishedKind = game.danger ? game.danger.kind : "";
+  const metrics = getStageMetrics();
   setDanger(null);
   game.eventIndex += 1;
-  game.nextDangerAt = game.trainX + (finishedKind === "crossing" ? 70 : 40);
+  game.nextDangerAt = getNextDangerStart(metrics, finishedKind, currentEvent());
   setStatus(currentEvent() ? "つぎも あんぜんかくにん" : "すすめるよ！", game.running ? "safe" : "wait");
   showScreen(game.running ? "playing" : "stopped");
   playToneSet("safe");
@@ -553,19 +560,41 @@ function getStageMetrics() {
 }
 
 function getDangerZone(metrics, kind) {
+  const isFollowUpEvent = game.eventIndex > 0;
   if (kind === "crossing") {
     return {
       start: metrics.crossingStart,
       end: metrics.crossingEnd,
-      triggerLimit: metrics.crossingStart - 128
+      triggerLimit: metrics.crossingStart - (isFollowUpEvent ? 48 : 128)
     };
   }
 
   return {
     start: metrics.roamStart,
     end: metrics.roamEnd,
-    triggerLimit: metrics.roamStart - 96
+    triggerLimit: metrics.roamStart - (isFollowUpEvent ? 24 : 96)
   };
+}
+
+function getNextDangerSpacing(finishedKind, nextKind) {
+  if (finishedKind === "crossing" && nextKind === "roam") {
+    return 32;
+  }
+
+  return 40;
+}
+
+function getNextDangerStart(metrics, finishedKind, nextEvent) {
+  if (!nextEvent) {
+    return game.trainX + 40;
+  }
+
+  const spacing = getNextDangerSpacing(finishedKind, nextEvent.kind);
+  const zone = getDangerZone(metrics, nextEvent.kind);
+  const minStart = game.trainX + 12;
+  const preferredStart = game.trainX + spacing;
+  const latestReachableStart = Math.max(minStart, zone.triggerLimit - 8);
+  return Math.min(preferredStart, latestReachableStart);
 }
 
 function updateMotion(deltaSeconds) {
