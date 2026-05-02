@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ふみきりストップでんしゃ</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <button id="soundButton" class="sound-button" type="button" aria-pressed="true">おと ON</button>
+
+    <section id="titleScreen" class="screen screen-title is-active" aria-labelledby="titleHeading">
+      <div class="sky-decor" aria-hidden="true">
+        <span class="cloud cloud-a"></span>
+        <span class="cloud cloud-b"></span>
+      </div>
+      <h1 id="titleHeading">ふみきり<br>ストップでんしゃ</h1>
+      <p class="lead">あんぜんかくにんをして すすもう</p>
+      <button id="toSelectButton" class="big-button primary" type="button">でんしゃをえらぶ</button>
+    </section>
+
+    <section id="selectScreen" class="screen screen-select" aria-labelledby="selectHeading">
+      <h2 id="selectHeading">でんしゃを えらぶ</h2>
+      <div id="trainChoices" class="train-choices" aria-label="でんしゃをえらぶ"></div>
+      <button id="startButton" class="big-button primary" type="button">スタート</button>
+    </section>
+
+    <section id="gameScreen" class="screen screen-game" aria-labelledby="gameHeading">
+      <div class="top-bar">
+        <div>
+          <h2 id="gameHeading">あんぜんかくにん</h2>
+          <p id="trainNameLabel" class="train-name">はやぶさ風</p>
+        </div>
+        <div class="hud">
+          <div id="stageBadge" class="stage-badge">まち</div>
+          <div id="progressBadge" class="progress-badge">ステージ 1 / 5</div>
+          <div id="statusBadge" class="status-badge">すすめるよ！</div>
+        </div>
+      </div>
+
+      <div id="stage" class="stage stage-town" aria-live="polite">
+        <div class="sun" aria-hidden="true"></div>
+        <div class="cloud cloud-c" aria-hidden="true"></div>
+        <div class="cloud cloud-d" aria-hidden="true"></div>
+        <div class="distant-hills" aria-hidden="true"></div>
+        <div id="stageDecor" class="stage-decor" aria-hidden="true"></div>
+        <div class="grass" aria-hidden="true"></div>
+        <div id="routeSign" class="route-sign">つぎのふみきりへ</div>
+        <div id="goalFlag" class="goal-flag is-hidden" aria-hidden="true">ゴール</div>
+
+        <div class="road road-far" aria-hidden="true"></div>
+        <div class="rail" aria-hidden="true">
+          <span></span>
+          <span></span>
+        </div>
+        <div class="road road-near" aria-hidden="true"></div>
+
+        <div id="crossing" class="crossing" aria-label="ふみきり">
+          <div class="crossbuck" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+          <div id="signal" class="signal safe" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+
+          <div class="gate gate-far-left" aria-hidden="true"><span></span></div>
+          <div class="gate gate-far-right" aria-hidden="true"><span></span></div>
+          <div class="gate gate-near-left" aria-hidden="true"><span></span></div>
+          <div class="gate gate-near-right" aria-hidden="true"><span></span></div>
+
+          <div id="hazard" class="hazard crossing-hazard hidden" aria-hidden="true"></div>
+        </div>
+
+        <div id="roamHazard" class="hazard roam-hazard hidden" aria-hidden="true"></div>
+        <div id="train" class="train train-hayabusa" aria-label="でんしゃ"></div>
+      </div>
+
+      <div class="controls" aria-label="そうさ">
+        <button id="actionButton" class="control-button stop" type="button">とまる</button>
+      </div>
+    </section>
+
+    <section id="resultScreen" class="screen screen-result" aria-labelledby="resultHeading">
+      <div id="confetti" class="confetti" aria-hidden="true"></div>
+      <h2 id="resultHeading">クリア！</h2>
+      <p id="resultText">ぜんぶ あんぜんに とおれたね</p>
+      <button id="retryButton" class="big-button primary" type="button">もういちど</button>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
